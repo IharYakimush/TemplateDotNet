@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TemplateDotNet.ConsoleHost": {
+      "commandName": "Project",
+      "commandLineArgs": "/app=sample1"
+    }
+  }
+}
