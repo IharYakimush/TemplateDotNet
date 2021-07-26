@@ -6,6 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="app-settings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="app-settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Sample.Console1\Sample.Console1.csproj" />
     <ProjectReference Include="..\TemplateDotNet\TemplateDotNet.csproj" />
   </ItemGroup>

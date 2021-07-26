@@ -13,7 +13,7 @@ namespace TemplateDotNet
     {
         public int Run(string[] args)
         {
-            Log.Logger = this.SerilogStartupConfiguration().CreateLogger();
+            Log.Logger = this.SerilogStartupConfiguration().CreateBootstrapLogger();
 
             try
             {
@@ -25,7 +25,7 @@ namespace TemplateDotNet
                 .ConfigureAppConfiguration((context, confBuilder) => this.ConfigureAppConfiguration(context, confBuilder, args))
                 .ConfigureServices(this.ConfigureServices)
                 .UseSerilog(this.SerilogConfiguration);
-
+                
                 builder.UseConsoleLifetime().Build().Run();
 
                 return 0;
@@ -41,9 +41,9 @@ namespace TemplateDotNet
             }
         }
 
-        protected virtual LoggerConfiguration SerilogStartupConfiguration()
+        protected virtual LoggerConfiguration SerilogStartupConfiguration(LoggerConfiguration loggerConfiguration = null)
         {
-            return new LoggerConfiguration()
+            return (loggerConfiguration ?? new LoggerConfiguration())
            .MinimumLevel.Debug()
            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
            .Enrich.FromLogContext()
@@ -52,7 +52,7 @@ namespace TemplateDotNet
 
         protected virtual void SerilogConfiguration(HostBuilderContext context, IServiceProvider serviceProvider, LoggerConfiguration loggerConfiguration)
         {
-
+            this.SerilogStartupConfiguration(loggerConfiguration);
         }
 
         protected virtual void ConfigureHostConfiguration(IConfigurationBuilder builder, string[] args)
@@ -64,7 +64,14 @@ namespace TemplateDotNet
 
         protected virtual void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder, string[] args)
         {
-            
+            string env = context.HostingEnvironment.EnvironmentName.ToLowerInvariant();
+
+            builder.AddJsonFile("sln-settings.json", true, true)
+                .AddJsonFile($"sln-settings.{env}.json", true, true)
+                .AddJsonFile("app-settings.json", true, true)
+                .AddJsonFile($"app-settings.{env}.json", true, true)
+                .AddEnvironmentVariables()
+                .AddCommandLine(args);
         }
     }
 }

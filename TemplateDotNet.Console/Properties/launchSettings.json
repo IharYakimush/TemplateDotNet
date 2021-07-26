@@ -2,7 +2,7 @@
   "profiles": {
     "TemplateDotNet.ConsoleHost": {
       "commandName": "Project",
-      "commandLineArgs": "/app=sample1"
+      "commandLineArgs": "/app=sample1 /ot=1"
     }
   }
 }
