@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,8 +22,8 @@ namespace TemplateDotNet
 
                 HostBuilder builder = new HostBuilder();
 
-                builder.ConfigureHostConfiguration(confBuilder => this.ConfigureHostConfiguration(confBuilder, args))
-                .ConfigureAppConfiguration((context, confBuilder) => this.ConfigureAppConfiguration(context, confBuilder, args))
+                builder.ConfigureHostConfiguration(confBuilder => this.SetHostConfiguration(confBuilder, args))
+                .ConfigureAppConfiguration((context, confBuilder) => this.SetAppConfiguration(context, confBuilder, args))
                 .ConfigureServices(this.ConfigureServices)
                 .UseSerilog(this.SerilogConfiguration);
                 
@@ -44,9 +45,7 @@ namespace TemplateDotNet
         protected virtual LoggerConfiguration SerilogStartupConfiguration(LoggerConfiguration loggerConfiguration = null)
         {
             return (loggerConfiguration ?? new LoggerConfiguration())
-           .MinimumLevel.Debug()
-           .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-           .Enrich.FromLogContext()
+           .MinimumLevel.Debug()           
            .WriteTo.Console();
         }
 
@@ -55,23 +54,49 @@ namespace TemplateDotNet
             this.SerilogStartupConfiguration(loggerConfiguration);
         }
 
-        protected virtual void ConfigureHostConfiguration(IConfigurationBuilder builder, string[] args)
+        protected virtual void SetHostConfiguration(IConfigurationBuilder builder, string[] args)
         {
-            builder.AddEnvironmentVariables().AddCommandLine(args);
+            foreach (var item in this.ConfigHostEnvVarPrefixes)
+            {
+                builder.AddEnvironmentVariables(item);
+            }
+
+            builder.AddCommandLine(args);
         }
 
-        protected abstract void ConfigureServices(HostBuilderContext context, IServiceCollection services);            
+        protected virtual IEnumerable<string> ConfigHostEnvVarPrefixes { get
+            {
+                yield return "DOTNET_";
+            } 
+        }
 
-        protected virtual void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder, string[] args)
+        protected virtual IEnumerable<string> ConfigAppJsonFiles(HostBuilderContext context)
         {
             string env = context.HostingEnvironment.EnvironmentName.ToLowerInvariant();
 
-            builder.AddJsonFile("sln-settings.json", true, true)
-                .AddJsonFile($"sln-settings.{env}.json", true, true)
-                .AddJsonFile("app-settings.json", true, true)
-                .AddJsonFile($"app-settings.{env}.json", true, true)
-                .AddEnvironmentVariables()
-                .AddCommandLine(args);
+            yield return "sln-settings.json";
+            yield return $"sln-settings.{env}.json";
+            yield return "app-settings.json";
+            yield return $"app-settings.{env}.json";
+        }
+
+        protected virtual IEnumerable<string> ConfigAppEnvVarPrefixes => this.ConfigHostEnvVarPrefixes;
+
+        protected abstract void ConfigureServices(HostBuilderContext context, IServiceCollection services);            
+
+        protected virtual void SetAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder, string[] args)
+        {
+            foreach (var item in this.ConfigAppJsonFiles(context))
+            {
+                builder.AddJsonFile(item, true, true);
+            }
+
+            foreach (var item in this.ConfigAppEnvVarPrefixes)
+            {
+                builder.AddEnvironmentVariables(item);
+            }
+
+            builder.AddCommandLine(args);
         }
     }
 }

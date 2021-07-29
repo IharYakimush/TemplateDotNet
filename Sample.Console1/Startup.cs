@@ -22,7 +22,12 @@ namespace Sample.Console1
             }
             else
             {
-                Console.WriteLine("Not dev or staging");
+                Console.WriteLine($"Not dev or staging. {context.HostingEnvironment.EnvironmentName}");
+            }
+
+            foreach (var item in context.Configuration.AsEnumerable())
+            {
+                Console.WriteLine($"{item.Key} {item.Value}");
             }
 
             services.AddHostedService<PrintTimeService>();
